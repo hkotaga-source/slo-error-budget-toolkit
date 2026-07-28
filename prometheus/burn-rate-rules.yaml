@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: slo-burn-rate
+  namespace: monitoring
+spec:
+  groups:
+    - name: slo.burnrate
+      rules:
+        - alert: ErrorBudgetBurnFast
+          expr: |
+            (
+              sum(rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total[5m]))
+            ) > (14.4 * 0.001)
+            and
+            (
+              sum(rate(http_requests_total{status=~"5.."}[1h]))
+              /
+              sum(rate(http_requests_total[1h]))
+            ) > (14.4 * 0.001)
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Fast error budget burn detected"
+            description: "Error rate is consuming the monthly error budget too quickly."
